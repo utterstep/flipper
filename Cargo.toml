@@ -1,4 +1,13 @@
 [workspace]
-members = ["flipper-ir-dumps-vis"]
+members = [
+    "flipper-ir-dumps-vis",
+    "flipper-ir-dumps",
+    "flipper-utils",
+    "flipper-ir-dumps-csv",
+]
 
 resolver = "2"
+
+[workspace.dependencies]
+clap = { version = "4.5.20", features = ["derive"] }
+color-eyre = "0.6.3"

@@ -1,5 +1,3 @@
-use std::fmt::Debug;
-
 use nom::{
     bytes::complete::tag,
     character::complete::{digit1, line_ending, not_line_ending},
@@ -8,14 +6,16 @@ use nom::{
     number, Finish, Parser,
 };
 
+use crate::signal::{RawSignal, SignalType};
+
 #[derive(Debug, PartialEq)]
 pub struct DumpFile {
     version: u32,
-    signals: Vec<SavedSignal>,
+    signals: Vec<RawSignal>,
 }
 
 impl DumpFile {
-    pub fn signals(&self) -> &[SavedSignal] {
+    pub fn signals(&self) -> &[RawSignal] {
         &self.signals
     }
 }
@@ -47,41 +47,7 @@ fn version(input: &str) -> nom::IResult<&str, u32> {
     Ok((input, version.parse().unwrap()))
 }
 
-#[derive(PartialEq)]
-pub struct SavedSignal {
-    name: String,
-    r#type: SignalType,
-    frequency: u32,
-    duty_cycle: f32,
-    /// Data is a list of durations in microseconds.
-    ///
-    /// The first value is the duration of the first pulse, the second value is the duration of the
-    /// pause after that, the third value is the duration of the second pulse, and so on.
-    data: Vec<u32>,
-}
-
-impl Debug for SavedSignal {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("SavedSignal")
-            .field("name", &self.name)
-            .field("type", &self.r#type)
-            .field("frequency", &self.frequency)
-            .field("duty_cycle", &self.duty_cycle)
-            .finish_non_exhaustive()
-    }
-}
-
-impl SavedSignal {
-    pub fn name(&self) -> &str {
-        &self.name
-    }
-
-    pub fn data(&self) -> &[u32] {
-        &self.data
-    }
-}
-
-fn saved_signal(input: &str) -> nom::IResult<&str, SavedSignal> {
+fn saved_signal(input: &str) -> nom::IResult<&str, RawSignal> {
     let (input, _) = tag("#")(input)?;
     let (input, _) = not_line_ending(input)?;
     let (input, _) = line_ending(input)?;
@@ -103,7 +69,7 @@ fn saved_signal(input: &str) -> nom::IResult<&str, SavedSignal> {
 
     Ok((
         input,
-        SavedSignal {
+        RawSignal {
             name,
             r#type,
             frequency,
@@ -143,11 +109,6 @@ fn data(input: &str) -> nom::IResult<&str, Vec<u32>> {
 
 fn parse_u32_str(input: &str) -> nom::IResult<&str, u32> {
     map_res(digit1, |input: &str| input.parse::<u32>()).parse(input)
-}
-
-#[derive(Debug, PartialEq)]
-pub enum SignalType {
-    Raw,
 }
 
 fn signal_type(input: &str) -> nom::IResult<&str, SignalType> {
@@ -218,7 +179,7 @@ mod tests {
             duty_cycle: 0.5
             data: 1 2 3 4 5
         "};
-        let expected = SavedSignal {
+        let expected = RawSignal {
             name: "test".to_string(),
             r#type: SignalType::Raw,
             frequency: 1000,
@@ -243,7 +204,7 @@ mod tests {
         "};
         let expected = DumpFile {
             version: 1,
-            signals: vec![SavedSignal {
+            signals: vec![RawSignal {
                 name: "test".to_string(),
                 r#type: SignalType::Raw,
                 frequency: 1000,

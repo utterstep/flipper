@@ -1,12 +1,11 @@
 use clap::Parser;
 use color_eyre::eyre::WrapErr;
+use csv::WriterBuilder;
 
 use flipper_ir_dumps::{dump::DumpFile, signal::ParsedSignal};
 
 mod cli;
 use cli::Cli;
-
-mod plotting;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     color_eyre::install()?;
@@ -23,13 +22,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    std::fs::create_dir_all(&cli.output_dir).wrap_err("Failed to create output directory")?;
+    let mut writer = WriterBuilder::new()
+        .flexible(true)
+        .from_path(cli.output_file)
+        .wrap_err("Failed to create CSV writer")?;
 
     for signal in dump.signals() {
-        plotting::plot_signal(&signal, &cli.output_dir)?;
-
         let parsed_signal = ParsedSignal::try_from(signal).wrap_err("Failed to parse signal")?;
-        println!("parsed signal: {:#?}", parsed_signal);
+
+        let mut record = vec![parsed_signal.name().to_owned()];
+        record.extend(
+            parsed_signal
+                .packets()
+                .iter()
+                .map(|packet| packet.to_string()),
+        );
+
+        writer
+            .write_record(record)
+            .wrap_err("Failed to write record")?;
     }
 
     Ok(())

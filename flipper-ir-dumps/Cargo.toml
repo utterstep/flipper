@@ -1,0 +1,15 @@
+[package]
+name = "flipper-ir-dumps"
+version = "0.0.0"
+edition = "2021"
+
+[dependencies]
+flipper-utils = { path = "../flipper-utils" }
+
+bitvec = "1.0.1"
+nom = "7.1.3"
+thiserror = "2.0.3"
+displaydoc = "0.2.5"
+
+[dev-dependencies]
+indoc = "2.0.5"

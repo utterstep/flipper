@@ -6,11 +6,8 @@ use plotters::{
     style::colors::full_palette::{BLUEGREY_900, GREEN_900, RED_900},
 };
 
-use crate::dump::SavedSignal;
-
-fn round_to(x: u32, round_to: u32) -> u32 {
-    (x + round_to / 2) / round_to * round_to
-}
+use flipper_ir_dumps::signal::RawSignal;
+use flipper_utils::round_to;
 
 const IMAGE_WIDTH: u32 = 1512 * 2;
 const IMAGE_HEIGHT: u32 = 800 * 2;
@@ -31,7 +28,7 @@ const IMAGE_HEIGHT: u32 = 800 * 2;
 /// and 20 px in the case of a pause.
 ///
 /// The rectangles are colored green for pulses and red for pauses.
-pub fn plot_signal(signal: &SavedSignal, out_folder: &Path) -> Result<()> {
+pub fn plot_signal(signal: &RawSignal, out_folder: &Path) -> Result<()> {
     let out_path = out_folder.join(format!("{}.png", signal.name()));
     let root = BitMapBackend::new(&out_path, (IMAGE_WIDTH, IMAGE_HEIGHT)).into_drawing_area();
     // use dark theme
@@ -106,20 +103,4 @@ pub fn plot_signal(signal: &SavedSignal, out_folder: &Path) -> Result<()> {
         .wrap_err("Failed to draw series")?;
 
     Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_round_to() {
-        assert_eq!(round_to(0, 550), 0);
-        assert_eq!(round_to(1, 550), 0);
-        assert_eq!(round_to(549, 550), 550);
-        assert_eq!(round_to(550, 550), 550);
-        assert_eq!(round_to(551, 550), 550);
-        assert_eq!(round_to(120, 50), 100);
-        assert_eq!(round_to(125, 50), 150);
-    }
 }
